@@ -3,7 +3,7 @@ A web-based educational digital logic schematic capture and simulation tool.
 ## Introduction
 LogicDesigner is a web-based schematic capture and functional simulation tool for teaching digital logic design, developed in the Electrical and Computer Engineering department at Binghamton University.  While schematic capture is no longer the predominant method of designing digital circuits, it remains an effective teaching tool.  Many commercial tools no longer feature schematic capture and thus LogicDesigner was developed.  
 
-![Screenshot of LogicDesigner][images/screenshot.png]
+![Screenshot of LogicDesigner](images/screenshot.png)
 ## Features
 LogicDesigner features include
 - A drag-and-drop interface for schematic capture with simple point-to-point wiring and common editing features such as auto-arrange.
