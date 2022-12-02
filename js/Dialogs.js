@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2018, Douglas H. Summerville, Binghamton University
+ * Copyright (c) 2018-2023, Douglas H. Summerville, Binghamton University
  * 
  */
 var OpenDialog = function()
@@ -50,7 +50,7 @@ var AboutDialog = function(editorUi)
 	mxUtils.br(div);
 	mxUtils.br(div);
 	var copy=document.createElement('small');
-	mxUtils.write(copy,'(c) 2018-2019 Douglas H. Summerville, Binghamton University.  All rights reserved.');
+	mxUtils.write(copy,'(c) 2018-2023 Douglas H. Summerville, Binghamton University.  All rights reserved.');
 	div.append(copy);
 	mxUtils.br(div);
 	mxUtils.br(div);
@@ -1132,6 +1132,7 @@ var VerilogWindow = function(editorUi, x, y, w, h)
 	{
 		textarea.value=editorUi.circuit.createVerilog(moduleName(),editorUi.editor.graph);
 	};
+	graph.getModel().addListener(mxEvent.CHANGE, update);
 	update();
 };
 var OutlineWindow = function(editorUi, x, y, w, h)

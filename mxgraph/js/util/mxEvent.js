@@ -40,9 +40,26 @@ var mxEvent =
 		
 		if (window.addEventListener)
 		{
+			// Checks if passive event listeners are supported
+			// see https://github.com/Modernizr/Modernizr/issues/1894
+			var supportsPassive = false;
+			
+			try
+			{
+				document.addEventListener('test', function() {}, Object.defineProperty &&
+					Object.defineProperty({}, 'passive', {get: function()
+					{supportsPassive = true;}}));
+			}
+			catch (e)
+			{
+				// ignore
+			}
+			
 			return function(element, eventName, funct)
 			{
-				element.addEventListener(eventName, funct, false);
+				element.addEventListener(eventName, funct,
+					(supportsPassive) ?
+					{passive: false} : false);
 				updateListenerList(element, eventName, funct);
 			};
 		}
@@ -325,7 +342,7 @@ var mxEvent =
 	 * Example:
 	 * 
 	 * (code)
-	 * mxEvent.addMouseWheelListener(function (evt, up)
+	 * mxEvent.addMouseWheelListener(function (evt, up, pinch)
 	 * {
 	 *   mxLog.show();
 	 *   mxLog.debug('mouseWheel: up='+up);
@@ -334,10 +351,13 @@ var mxEvent =
 	 * 
 	 * Parameters:
 	 * 
-	 * funct - Handler function that takes the event argument and a boolean up
-	 * argument for the mousewheel direction.
+	 * funct - Handler function that takes the event argument, a boolean argument
+	 * for the mousewheel direction and a boolean to specify if the underlying
+	 * event was a pinch gesture on a touch device.
+	 * target - Target for installing the listener in Google Chrome. See 
+	 * https://www.chromestatus.com/features/6662647093133312.
 	 */
-	addMouseWheelListener: function(funct)
+	addMouseWheelListener: function(funct, target)
 	{
 		if (funct != null)
 		{
@@ -351,34 +371,104 @@ var mxEvent =
 					evt = window.event;
 				}
 			
-				var delta = 0;
-				
-				if (mxClient.IS_FF)
+				//To prevent window zoom on trackpad pinch
+				if (evt.ctrlKey) 
 				{
-					delta = -evt.detail / 2;
+					evt.preventDefault();
 				}
-				else
-				{
-					delta = evt.wheelDelta / 120;
-				}
-				
+
 				// Handles the event using the given function
-				if (delta != 0)
+				if (Math.abs(evt.deltaX) > 0.5 || Math.abs(evt.deltaY) > 0.5)
 				{
-					funct(evt, delta > 0);
+					funct(evt, (evt.deltaY == 0) ?  -evt.deltaX > 0 : -evt.deltaY > 0);
 				}
 			};
 	
-			// Webkit has NS event API, but IE event name and details 
-			if (mxClient.IS_NS && document.documentMode == null)
+			target = target != null ? target : window;
+					
+			if (mxClient.IS_SF && !mxClient.IS_TOUCH)
 			{
-				var eventName = (mxClient.IS_SF || 	mxClient.IS_GC) ? 'mousewheel' : 'DOMMouseScroll';
-				mxEvent.addListener(window, eventName, wheelHandler);
+				var scale = 1;
+				
+				mxEvent.addListener(target, 'gesturestart', function(evt)
+				{
+					mxEvent.consume(evt);
+					scale = 1;
+				});
+				
+				mxEvent.addListener(target, 'gesturechange', function(evt)
+				{
+					mxEvent.consume(evt);
+					var diff = scale - evt.scale;
+					
+					if (Math.abs(diff) > 0.2)
+					{
+						funct(evt, diff < 0, true);
+						scale = evt.scale;
+					}
+				});
+
+				mxEvent.addListener(target, 'gestureend', function(evt)
+				{
+					mxEvent.consume(evt);
+				});
 			}
 			else
 			{
-				mxEvent.addListener(document, 'mousewheel', wheelHandler);
+				var evtCache = [];
+				var dx0 = 0;
+				var dy0 = 0;
+				
+				// Adds basic listeners for graph event dispatching
+				mxEvent.addGestureListeners(target, mxUtils.bind(this, function(evt)
+				{
+					if (!mxEvent.isMouseEvent(evt) && evt.pointerId != null)
+					{
+						evtCache.push(evt);
+					}
+				}),
+				mxUtils.bind(this, function(evt)
+				{
+					if (!mxEvent.isMouseEvent(evt) && evtCache.length == 2)
+					{
+						// Find this event in the cache and update its record with this event
+						for (var i = 0; i < evtCache.length; i++)
+						{
+							if (evt.pointerId == evtCache[i].pointerId)
+							{
+								evtCache[i] = evt;
+								break;
+							}
+						}
+						
+					   	// Calculate the distance between the two pointers
+						var dx = Math.abs(evtCache[0].clientX - evtCache[1].clientX);
+						var dy = Math.abs(evtCache[0].clientY - evtCache[1].clientY);
+						var tx = Math.abs(dx - dx0);
+						var ty = Math.abs(dy - dy0);
+					
+						if (tx > mxEvent.PINCH_THRESHOLD || ty > mxEvent.PINCH_THRESHOLD)
+						{
+							var cx = evtCache[0].clientX + (evtCache[1].clientX - evtCache[0].clientX) / 2;
+							var cy = evtCache[0].clientY + (evtCache[1].clientY - evtCache[0].clientY) / 2;
+							
+							funct(evtCache[0], (tx > ty) ? dx > dx0 : dy > dy0, true, cx, cy);
+						
+						   	// Cache the distance for the next move event 
+							dx0 = dx;
+							dy0 = dy;
+						}
+					}
+				}),
+				mxUtils.bind(this, function(evt)
+				{
+					evtCache = [];
+					dx0 = 0;
+					dy0 = 0;
+				}));
 			}
+			
+			mxEvent.addListener(target, 'wheel', wheelHandler);
 		}
 	},
 	
@@ -1383,6 +1473,14 @@ var mxEvent =
 	 *
 	 * Specifies the event name for reset.
 	 */
-	RESET: 'reset'
+	RESET: 'reset',
+
+	/**
+	 * Variable: PINCH_THRESHOLD
+	 *
+	 * Threshold for pinch gestures to fire a mouse wheel event.
+	 * Default value is 10.
+	 */
+	PINCH_THRESHOLD: 10
 
 };

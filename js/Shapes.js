@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2018, Douglas H. Summerville, Binghamton University
+ * Copyright (c) 2018-2023, Douglas H. Summerville, Binghamton University
  * (see license.txt for attributions)
  */
 (function()
@@ -432,5 +432,35 @@
 	mxCellRenderer.registerShape('dlatch_en', DLatchShape);
 	mxCellRenderer.registerShape('dff', DLatchShape);
 	mxCellRenderer.registerShape('dff_en', DLatchShape);
+	function SRLatchShape()
+	{
+		mxActor.call(this);
+	};
+	mxUtils.extend(SRLatchShape, mxActor);
+	SRLatchShape.prototype.redrawPath = function(c, x, y, w, h)
+	{
+		var name= "SR-Latch";
+		c.setStrokeColor('black');
+		c.begin();
+		c.rect(0,0,w,h);
+		c.fillAndStroke();
+		c.setFontSize(8);
+		c.setFontStyle(mxConstants.FONT_BOLD);
+		c.text(w/2,2*h/5,0,0,name,'center','middle');
+	};
+	SRLatchShape.prototype.getPorts = function()
+	{
+		var ports=new Array();
+		var style=this.state.style["shape"];
+		var is_enable=style.endsWith("_en");
+		ports['in_S_w']={x: 0, y: 0.25, perimeter:false};
+		ports['in_R_w']={x: 0, y: 0.75, perimeter:false};
+		ports['out_Q_e']={x: 1, y: 0.25, perimeter:false};
+		if( is_enable )
+			ports['in_en_w']={x: 0, y: 0.5, perimeter:false};
+		return ports;
+	};
+	mxCellRenderer.registerShape('srlatch', SRLatchShape);
+	mxCellRenderer.registerShape('srlatch_en', SRLatchShape);
 
 })();

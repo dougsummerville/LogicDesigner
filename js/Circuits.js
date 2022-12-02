@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2018, Douglas H. Summerville, Binghamton University
+ * Copyright (c) 2018-2023, Douglas H. Summerville, Binghamton University
  * 
  */
 
@@ -130,20 +130,31 @@ schematic.prototype.runDRC = function()
 				}
 			}
 			break;
+		case "srlatch_en":
+			if( item.getLinks("in_en",false).length == 0)
+				Messages.addError("SR Latch enable input must be connected",item);
+		case "srlatch":
+			if( item.getLinks("in_S",false).length == 0)
+				Messages.addError("SR Latch Set (S) input must be connected",item);
+			if( item.getLinks("in_R",false).length == 0)
+				Messages.addError("SR Latch Reset (R) input must be connected",item);
+			if( item.numLinksOutOf() == 0 )
+				Messages.addWarning("SR Latch has an unconnected output",item);
+			break;
 		case "dlatch_en":
 			if( item.getLinks("in_en",false).length == 0)
-				Messages.addError("Latch enable input must be connected",item);
+				Messages.addError("D Latch enable (en) input must be connected",item);
 		case "dlatch":
 			if( item.getLinks("in_G",false).length == 0)
-				Messages.addError("Latch gate input must be connected",item);
+				Messages.addError("D Latch gate (G) input must be connected",item);
 			if( item.getLinks("in_D",false).length == 0)
-				Messages.addError("Latch D input must be connected",item);
+				Messages.addError("D Latch data (D) input must be connected",item);
 			if( item.numLinksOutOf() == 0 )
 				Messages.addWarning("Latch has an unconnected output",item);
 			break;
 		case "dff_en":
 			if( item.getLinks("in_en",false).length == 0)
-				Messages.addError("Flip-Flop enable input must be connected",item);
+				Messages.addError("Flip-Flop enable (en) input must be connected",item);
 		case "dff":
 			if( item.getLinks("in_>",false).length == 0)
 				Messages.addError("Flip-Flop clock input must be connected",item);
@@ -175,7 +186,7 @@ schematic.prototype.createVerilog=function(name)
 	var moduleName= name;
 	var verilogCode="";
 	var graph=this.graph;
-	var gateNames={and:"and", nand:"nand",or:"or",nor:"nor",xor:"xor",xnor:"xnor",buffer:"buf", inverter:"not",mux2:"mux #(2,1)", mux4:"mux #(4,1)", mux8:"mux #(8,1)", mux16:"mux #(16,1)",decoder2:"decoder #(2,1)",decoder3:"decoder #(3,1)",decoder4:"decoder #(4,1)"};
+	var gateNames={and:"and", nand:"nand",or:"or",nor:"nor",xor:"xor",xnor:"xnor",buffer:"buf", inverter:"not",mux2:"mux #(2,1)", mux4:"mux #(4,1)", mux8:"mux #(8,1)", mux16:"mux #(16,1)",decoder2:"decoder #(2,1)",decoder3:"decoder #(3,1)",decoder4:"decoder #(4,1)",dlatch:"d_latch",dlatch_en:"d_latch_en",dff:"dff",dff_en:"dff_en",srlatch:"sr_latch",srlatch_en:"sr_latch_en"};
 	function gateName( node, prefix){ return prefix+node.id;}
 	function portName( node, prefix ){ return node.value ? node.value : gateName(node,prefix);}
 	function netName( link ){
@@ -239,6 +250,12 @@ schematic.prototype.createVerilog=function(name)
 		case "mux4":
 		case "mux8":
 		case "mux16":
+		case "dlatch":
+		case "dlatch_en":
+		case "srlatch":
+		case "srlatch_en":
+		case "dff":
+		case "dff_en":
 			//determine if output net name is port name
 			var linksout=item.linksOutOf();
 			if( linksout.length == 1 && 
@@ -367,6 +384,156 @@ schematic.prototype.createVerilog=function(name)
 			netList=netList.replace(/, *$/gi, '');
 			netList=netList+"} )\n);";
 			break; 
+		case "dlatch":
+			netList += "\n\n" + gateNames[style["shape"]] + ' ' + gateName(item,"U") + " ("; 
+			netList += '\n\t.data_out(';
+			var links=item.linksOutOf();
+			if( links.length )
+				netList += getNameOrAlias(links[0]);
+			else
+				netList += gateName(item,"X");
+			netList += '),\n\t.in_D( ';
+			{
+				var lnk=item.getLink( 'in_D',false);
+				if( lnk ) netList+=getNameOrAlias(lnk);
+				else netList+='1\'bx';
+			}
+			netList=netList+" ),\n\t.in_G( ";
+			{
+				var lnk=item.getLink( 'in_G',false);
+				if( lnk ) netList+=getNameOrAlias(lnk);
+				else netList+='1\'bx';
+			}
+			netList=netList+" )\n);";
+			break;
+		case "srlatch":
+			netList += "\n\n" + gateNames[style["shape"]] + ' ' + gateName(item,"U") + " ("; 
+			netList += '\n\t.data_out(';
+			var links=item.linksOutOf();
+			if( links.length )
+				netList += getNameOrAlias(links[0]);
+			else
+				netList += gateName(item,"X");
+			netList += '),\n\t.in_S( ';
+			{
+				var lnk=item.getLink( 'in_S',false);
+				if( lnk ) netList+=getNameOrAlias(lnk);
+				else netList+='1\'bx';
+			}
+			netList=netList+" ),\n\t.in_R( ";
+			{
+				var lnk=item.getLink( 'in_R',false);
+				if( lnk ) netList+=getNameOrAlias(lnk);
+				else netList+='1\'bx';
+			}
+			netList=netList+" )\n);";
+			break;
+		case "srlatch_en":
+			netList += "\n\n" + gateNames[style["shape"]] + ' ' + gateName(item,"U") + " ("; 
+			netList += '\n\t.data_out(';
+			var links=item.linksOutOf();
+			if( links.length )
+				netList += getNameOrAlias(links[0]);
+			else
+				netList += gateName(item,"X");
+			netList += '),\n\t.in_S( ';
+			{
+				var lnk=item.getLink( 'in_S',false);
+				if( lnk ) netList+=getNameOrAlias(lnk);
+				else netList+='1\'bx';
+			}
+			netList=netList+" ),\n\t.in_R( ";
+			{
+				var lnk=item.getLink( 'in_R',false);
+				if( lnk ) netList+=getNameOrAlias(lnk);
+				else netList+='1\'bx';
+			}
+			netList=netList+" ),\n\t.in_EN( ";
+			{
+				var lnk=item.getLink( 'in_en',false);
+				if( lnk ) netList+=getNameOrAlias(lnk);
+				else netList+='1\'bx';
+			}
+			netList=netList+" )\n);";
+			break;
+		case "dlatch_en":
+			netList += "\n\n" + gateNames[style["shape"]] + ' ' + gateName(item,"U") + " ("; 
+			netList += '\n\t.data_out(';
+			var links=item.linksOutOf();
+			if( links.length )
+				netList += getNameOrAlias(links[0]);
+			else
+				netList += gateName(item,"X");
+			netList += '),\n\t.in_D( ';
+			{
+				var lnk=item.getLink( 'in_D',false);
+				if( lnk ) netList+=getNameOrAlias(lnk);
+				else netList+='1\'bx';
+			}
+			netList=netList+" ),\n\t.in_G( ";
+			{
+				var lnk=item.getLink( 'in_G',false);
+				if( lnk ) netList+=getNameOrAlias(lnk);
+				else netList+='1\'bx';
+			}
+			netList=netList+" ),\n\t.in_EN( ";
+			{
+				var lnk=item.getLink( 'in_en',false);
+				if( lnk ) netList+=getNameOrAlias(lnk);
+				else netList+='1\'bx';
+			}
+			netList=netList+" )\n);";
+			break;
+		case "dff":
+			netList += "\n\n" + gateNames[style["shape"]] + ' ' + gateName(item,"U") + " ("; 
+			netList += '\n\t.data_out(';
+			var links=item.linksOutOf();
+			if( links.length )
+				netList += getNameOrAlias(links[0]);
+			else
+				netList += gateName(item,"X");
+			netList += '),\n\t.in_D( ';
+			{
+				var lnk=item.getLink( 'in_D',false);
+				if( lnk ) netList+=getNameOrAlias(lnk);
+				else netList+='1\'bx';
+			}
+			netList=netList+" ),\n\t.in_CLK( ";
+			{
+				var lnk=item.getLink( 'in_>',false);
+				if( lnk ) netList+=getNameOrAlias(lnk);
+				else netList+='1\'bx';
+			}
+			netList=netList+" )\n);";
+			break;
+		case "dff_en":
+			netList += "\n\n" + gateNames[style["shape"]] + ' ' + gateName(item,"U") + " ("; 
+			netList += '\n\t.data_out(';
+			var links=item.linksOutOf();
+			if( links.length )
+				netList += getNameOrAlias(links[0]);
+			else
+				netList += gateName(item,"X");
+			netList += '),\n\t.in_D( ';
+			{
+				var lnk=item.getLink( 'in_D',false);
+				if( lnk ) netList+=getNameOrAlias(lnk);
+				else netList+='1\'bx';
+			}
+			netList=netList+" ),\n\t.in_CLK( ";
+			{
+				var lnk=item.getLink( 'in_>',false);
+				if( lnk ) netList+=getNameOrAlias(lnk);
+				else netList+='1\'bx';
+			}
+			netList=netList+" ),\n\t.in_EN( ";
+			{
+				var lnk=item.getLink( 'in_en',false);
+				if( lnk ) netList+=getNameOrAlias(lnk);
+				else netList+='1\'bx';
+			}
+			netList=netList+" )\n);";
+			break;
 		case "decoder4": decodersize++;
 		case "decoder3": decodersize++;
 		case "decoder2": decodersize++;
@@ -566,6 +733,15 @@ schematic.prototype.updateGateOutput=function(node)
 		sel+= ckt.linkIsHigh(node.getLink("in_a0")) ? 1 : 0;
 		ckt.setGateOutput( node,false);
 		ckt.setGateOutput( node,ckt.linkIsHigh( node.getLink("in_en")),"out"+(sel+1));
+	case "srlatch_en":
+		if( !ckt.linkIsHigh(node.getLink("in_en")))
+			break;
+	case "srlatch":
+		if( ckt.linkIsHigh(node.getLink("in_S")))
+			ckt.setGateOutput( node,true);
+		else if( ckt.linkIsHigh(node.getLink("in_R")))
+			ckt.setGateOutput( node,false);
+		break;
 	case "dlatch_en":
 		if( !ckt.linkIsHigh(node.getLink("in_en")))
 			break;

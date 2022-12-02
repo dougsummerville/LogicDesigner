@@ -1,6 +1,6 @@
 /**
- * Copyright (c) 2006-2017, JGraph Ltd
- * Copyright (c) 2006-2017, Gaudenz Alder
+ * Copyright (c) 2006-2019, JGraph Ltd
+ * Copyright (c) 2006-2017, draw.io AG
  */
 /**
  * Class: mxPrintPreview
@@ -156,10 +156,10 @@
  * 
  * graph - <mxGraph> to be previewed.
  * scale - Optional scale of the output. Default is 1 / <mxGraph.pageScale>.
+ * pageFormat - <mxRectangle> that specifies the page format (in pixels).
  * border - Border in pixels along each side of every page. Note that the
  * actual print function in the browser will add another border for
  * printing.
- * pageFormat - <mxRectangle> that specifies the page format (in pixels).
  * This should match the page format of the printer. Default uses the
  * <mxGraph.pageFormat> of the given graph.
  * x0 - Optional left offset of the output. Default is 0.
@@ -896,7 +896,8 @@ mxPrintPreview.prototype.renderPage = function(w, h, dx, dy, content, pageNumber
 			innerDiv.style.height = (h - 2 * this.border) + 'px';
 			innerDiv.style.overflow = 'hidden';
 
-			if (mxClient.IS_IE && (doc.documentMode == null || doc.documentMode == 5 || doc.documentMode == 8 || doc.documentMode == 7))
+			if (mxClient.IS_IE && (doc.documentMode == null || doc.documentMode == 5 ||
+				doc.documentMode == 8 || doc.documentMode == 7))
 			{
 				innerDiv.style.marginTop = this.border + 'px';
 				innerDiv.style.marginLeft = this.border + 'px';	
@@ -948,6 +949,18 @@ mxPrintPreview.prototype.getRoot = function()
 };
 
 /**
+ * Function: useCssTransforms
+ * 
+ * Returns true if CSS transforms should be used for scaling content.
+ * This returns true if foreignObject is supported and we're not in Safari
+ * as it has clipping bugs for transformed CSS content with foreignObjects.
+ */
+mxPrintPreview.prototype.useCssTransforms = function()
+{
+	return !mxClient.NO_FO && !mxClient.IS_SF;
+};
+
+/**
  * Function: addGraphFragment
  * 
  * Adds a graph fragment to the given div.
@@ -971,13 +984,14 @@ mxPrintPreview.prototype.addGraphFragment = function(dx, dy, scale, pageNumber, 
 	var backgroundPane = view.getBackgroundPane();
 	var drawPane = view.getDrawPane();
 	var overlayPane = view.getOverlayPane();
+	var realScale = scale;
 
 	if (this.graph.dialect == mxConstants.DIALECT_SVG)
 	{
 		view.createSvg();
 		
 		// Uses CSS transform for scaling
-		if (!mxClient.NO_FO)
+		if (this.useCssTransforms())
 		{
 			var g = view.getDrawPane().parentNode;
 			var prev = g.getAttribute('transform');
@@ -1020,8 +1034,8 @@ mxPrintPreview.prototype.addGraphFragment = function(dx, dy, scale, pageNumber, 
 	if (this.clipping)
 	{
 		var tempClip = new mxRectangle((clip.x + translate.x) * s, (clip.y + translate.y) * s,
-				clip.width * s / scale, clip.height * s / scale);
-		
+				clip.width * s / realScale, clip.height * s / realScale);
+
 		// Checks clipping rectangle for speedup
 		// Must create terminal states for edge clipping even if terminal outside of clip
 		this.graph.cellRenderer.redraw = function(state, force, rendering)
@@ -1035,10 +1049,12 @@ mxPrintPreview.prototype.addGraphFragment = function(dx, dy, scale, pageNumber, 
 				{
 					var bbox = view.getBoundingBox(orig, false);
 					
-					// Stops rendering if outside clip for speedup
-					if (bbox != null && !mxUtils.intersects(tempClip, bbox))
+					// Stops rendering if outside clip for speedup but ignores
+					// edge labels where width and height is set to 0
+					if (bbox != null && bbox.width > 0 && bbox.height > 0 &&
+						!mxUtils.intersects(tempClip, bbox))
 					{
-						//return;
+						return;
 					}
 				}
 			}

@@ -553,7 +553,9 @@ mxShape.prototype.redrawShape = function()
 		// Specifies if events should be handled
 		canvas.pointerEvents = this.pointerEvents;
 	
+		this.beforePaint(canvas);
 		this.paint(canvas);
+		this.afterPaint(canvas);
 	
 		if (this.node != canvas.root)
 		{
@@ -627,7 +629,6 @@ mxShape.prototype.createSvgCanvas = function()
 	var canvas = new mxSvgCanvas2D(this.node, false);
 	canvas.strokeTolerance = (this.pointerEvents) ? this.svgStrokeTolerance : 0;
 	canvas.pointerEventsValue = this.svgPointerEvents;
-	canvas.blockImagePointerEvents = mxClient.IS_FF;
 	var off = this.getSvgScreenOffset();
 
 	if (off != 0)
@@ -773,7 +774,7 @@ mxShape.prototype.updateHtmlFilters = function(node)
 };
 
 /**
- * Function: mixedModeHtml
+ * Function: updateHtmlColors
  *
  * Allow optimization by replacing VML with HTML.
  */
@@ -823,7 +824,7 @@ mxShape.prototype.updateHtmlColors = function(node)
 };
 
 /**
- * Function: mixedModeHtml
+ * Function: updateHtmlBounds
  *
  * Allow optimization by replacing VML with HTML.
  */
@@ -871,6 +872,20 @@ mxShape.prototype.destroyCanvas = function(canvas)
 		this.oldGradients = canvas.gradients;
 	}
 };
+
+/**
+ * Function: beforePaint
+ * 
+ * Invoked before paint is called.
+ */
+mxShape.prototype.beforePaint = function(c) { }
+
+/**
+ * Function: afterPaint
+ * 
+ * Invokes after paint was called.
+ */
+mxShape.prototype.afterPaint = function(c) { }
 
 /**
  * Function: paint

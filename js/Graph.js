@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2018, Douglas H. Summerville, Binghamton University
+ * Copyright (c) 2018-2023, Douglas H. Summerville, Binghamton University
  * (see license.txt for attributions)
  */
 if (typeof html4 !== 'undefined')
@@ -515,7 +515,7 @@ mxEdgeStyle.SchematicWiringStyle=function(state,source,target,points,result)
 			}
 		}
 }
-mxStyleRegistry.putValue('schematicWiringStyle', mxEdgeStyle.SchematicWiringStyle);
+mxStyleRegistry.putValue('schematicWiringStyle', mxEdgeStyle.OrthConnector);
 mxGraphModel.prototype.ignoreRelativeEdgeParent = false;
 mxGraphView.prototype.gridImage = (mxClient.IS_SVG) ? 'data:image/gif;base64,R0lGODlhCgAKAJEAAAAAAP///8zMzP///yH5BAEAAAMALAAAAAAKAAoAAAIJ1I6py+0Po2wFADs=' :
 	IMAGE_PATH + '/grid.gif';
@@ -3363,7 +3363,7 @@ if (typeof mxVertexHandler != 'undefined')
 		};
 		Graph.prototype.defaultVertexStyle = {};
 		
-		Graph.prototype.defaultEdgeStyle = {'edgeStyle': 'schematicWiringStyle', 'rounded': '1',
+		Graph.prototype.defaultEdgeStyle = {'edgeStyle': 'schematicWiringStyle', 'rounded': '0',
 			'jettySize': '10', 'orthogonalLoop': '1','jumpStyle': 'arc', 'endArrow': 'none', 'endFill': '0'};
 		Graph.prototype.createCurrentEdgeStyle = function()
 		{

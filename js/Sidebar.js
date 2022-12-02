@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2018, Douglas H. Summerville, Binghamton University
+ * Copyright (c) 2018-2023, Douglas H. Summerville, Binghamton University
  * (see license.txt for attributions)
  */
 function Sidebar(editorUi, container)
@@ -873,10 +873,12 @@ Sidebar.prototype.createBistableShapes = function()
 	var field = new mxCell('List Item', new mxGeometry(0, 0, 60, 26), 'text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;');
 	field.vertex = true;
 	return [
-	 	this.createVertexTemplateEntry('shape=dlatch;editable=0;', 40, 60, '', 'D Latch', null, null, 'D Latch'),
+	 	this.createVertexTemplateEntry('shape=dlatch;editable=0;', 40, 60, '', 'D Latch', null, null, 'D-Latch'),
 	 	this.createVertexTemplateEntry('shape=dlatch_en;editable=0;', 40, 60, '', 'D Latch w/ enable', null, null, 'D-Latch'),
 	 	this.createVertexTemplateEntry('shape=dff;editable=0;', 40, 60, '', 'D Flip-Flop', null, null, 'D Flip-Flop'),
 	 	this.createVertexTemplateEntry('shape=dff_en;editable=0;', 40, 60, '', 'D Flip-Flop w/ enable', null, null, 'D Flip-Flop w/ enable'),
+	 	this.createVertexTemplateEntry('shape=srlatch;editable=0;', 40, 60, '', 'SR Latch', null, null, 'SR-Latch'),
+	 	this.createVertexTemplateEntry('shape=srlatch_en;editable=0;', 40, 60, '', 'SR Latch w/ enable', null, null, 'SR-Latch'),
 		
 	];
 
