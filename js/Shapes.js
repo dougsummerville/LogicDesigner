@@ -372,7 +372,7 @@
 	{
 		var ports=new Array();
 		for( var i=0; i<s; i=i+1)
-			ports['out'+(i+1)+'_d'+i+'_e'] = {x: 1, y: [(i+1)/(1+s)], perimeter: false};
+			ports['out'+(i<9 ? '0':'')+(i+1)+'_d'+i+'_e'] = {x: 1, y: [(i+1)/(1+s)], perimeter: false};
 		for( var i=0; i<n; i=i+1 )
 			ports['in'+'_a'+i+'_w'] = {x: 0, y: [(i+1)/(1+s)], perimeter: false};
 		ports['in_en_w']={x: 0, y: [s/(1+s)], perimeter:false};

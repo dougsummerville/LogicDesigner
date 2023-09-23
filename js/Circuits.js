@@ -123,9 +123,9 @@ schematic.prototype.runDRC = function()
 				Messages.addError("Decoder enable input must be connected",item);
 			for( var i=0; i<(1<<decodersize); i=i+1 )
 			{
-				if( item.getLinks("out_"+(i+1)+"_",true).length == 0)
+				if( item.getLinks("out"+(i<9?'0':'')+(i+1),true).length == 0)
 				{
-					Messages.addWarning("Decoder has an unconnected data output(s)",item);
+					Messages.addWarning("Decoder has an unconnected data output(s)"+" out_"+(i<9?'0':'')+(i+1)+"_",item);
 					break;
 				}
 			}
@@ -274,7 +274,7 @@ schematic.prototype.createVerilog=function(name)
 		case "decoder2":decodersize++;
 			for( var i=0; i<(1<<decodersize); i=i+1 )
 			{
-				var linksout=item.getLinks( 'out'+(i+1)+'_d',true);
+				var linksout=item.getLinks( 'out'+(i<9?'0':'')+(i+1)+'_d',true);
 				if( linksout.length == 1 && 
 					graph.getCellStyle(linksout[0].target)["shape"] == "outputport" )
 				{
@@ -541,7 +541,7 @@ schematic.prototype.createVerilog=function(name)
 			netList += '\n\t.data_out( {';
 			for( var i=(1<<decodersize)-1; i>=0; i=i-1 )
 			{
-				var lnk=item.getLink( 'out'+(i+1)+'_d'+i,true);
+				var lnk=item.getLink( 'out'+(i<9?'0':'')+(i+1)+'_d'+i,true);
 				if( lnk ) netList+=getNameOrAlias(lnk);
 				else netList+='1\'bx';
 				netList+=',';
@@ -732,7 +732,7 @@ schematic.prototype.updateGateOutput=function(node)
 		sel+= ckt.linkIsHigh(node.getLink("in_a1")) ? 2 : 0;
 		sel+= ckt.linkIsHigh(node.getLink("in_a0")) ? 1 : 0;
 		ckt.setGateOutput( node,false);
-		ckt.setGateOutput( node,ckt.linkIsHigh( node.getLink("in_en")),"out"+(sel+1));
+		ckt.setGateOutput( node,ckt.linkIsHigh( node.getLink("in_en")),"out"+(sel<9?'0':'')+(sel+1));
 	case "srlatch_en":
 		if( !ckt.linkIsHigh(node.getLink("in_en")))
 			break;
